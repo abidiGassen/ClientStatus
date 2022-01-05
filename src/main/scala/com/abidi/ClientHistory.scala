@@ -7,24 +7,27 @@ import org.apache.spark.sql.types.BooleanType
 object ClientHistory {
   def updateClientsStatus(clientsHistory: DataFrame, updatedClientsInfo: DataFrame): DataFrame = {
 
-    val updateEndDate = updatedClientsInfo
+    val clientsHistoryDropDup = clientsHistory.dropDuplicates()
+    val updatedClientsInfoDropDup = updatedClientsInfo.dropDuplicates()
+
+    val updateEndDate = updatedClientsInfoDropDup
       .select(
         col("name"),
         col("surname"),
         col("startDate").alias("endDate")
       )
 
-    val closedOldClient = clientsHistory
+    val closedOldClient = clientsHistoryDropDup
       .join(updateEndDate, Seq("name", "surname"), "inner")
       .withColumn("isEffective", lit(false).cast(BooleanType))
 
-    val clientsHistoryList = clientsHistory
+    val clientsHistoryList = clientsHistoryDropDup
       .select(
         col("name"),
         col("surname")
       )
 
-    val newAddressClient = updatedClientsInfo
+    val newAddressClient = updatedClientsInfoDropDup
       .join(clientsHistoryList, Seq("name", "surname"), "left")
       .withColumn("endDate", lit(null))
       .withColumn("isEffective", lit(true).cast(BooleanType))
@@ -32,19 +35,27 @@ object ClientHistory {
     val clientAddressUpdate = closedOldClient
       .union(newAddressClient)
 
-    val clientsUpdateList = updatedClientsInfo
+    val clientsUpdateList = updatedClientsInfoDropDup
       .select(
         col("name"),
         col("surname")
       )
 
-    val activeClients = clientsHistory
+    val activeClients = clientsHistoryDropDup
       .join(clientsUpdateList, Seq("name", "surname"), "left_anti")
       .withColumn("endDate", lit(null))
       .withColumn("isEffective", lit(true).cast(BooleanType))
 
-    val updatedClientsStatus = clientAddressUpdate
+    val alreadyExistingClient = clientsHistoryDropDup
+      .join(updatedClientsInfoDropDup, Seq("name","surname","address","startDate"),"inner")
+      .withColumn("endDate", lit(null))
+      .withColumn("isEffective", lit(true).cast(BooleanType))
+
+    val firstVersion = clientAddressUpdate
       .union(activeClients)
+
+    val updatedClientsStatus = firstVersion
+      .union(alreadyExistingClient)
 
     updatedClientsStatus
   }

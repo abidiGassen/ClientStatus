@@ -80,4 +80,29 @@ class ClientHistorySpec extends AnyFlatSpec with GivenWhenThen {
     ).toDF()
     result.collect() should contain theSameElementsAs expectedResult.collect()
   }
+
+  "updateClientStatus" should "delete duplicated data " in {
+    Given("clientsInfo and updatedClientsInfo")
+    val clientsInfo = Seq(
+      UpdateClient("Ala", "Noumi", "LA", "12/07/2021"),
+      UpdateClient("Ala", "Noumi", "LA", "12/07/2021")
+    )
+    val updatedClientsInfo = Seq(
+      UpdateClient("Tarak", "Marzougui", "NY", "25/12/2021"),
+      UpdateClient("Tarak", "Marzougui", "NY", "25/12/2021")
+    )
+    import spark.implicits._
+    val clientsInfoDF: DataFrame = clientsInfo.toDF()
+    val updatedClientsInfoDF: DataFrame = updatedClientsInfo.toDF()
+
+    When("updateClientsStatus is invoked")
+    val result = updateClientsStatus(clientsInfoDF, updatedClientsInfoDF)
+
+    Then("clients Tarak Marzougui and Ala Noumi should be returned only once")
+    val expectedResult: DataFrame = Seq(
+      HistoryClient("Tarak", "Marzougui", "NY", "25/12/2021", null, true),
+      HistoryClient("Ala", "Noumi", "LA", "12/07/2021", null, true)
+    ).toDF()
+    result.collect() should contain theSameElementsAs expectedResult.collect()
+  }
 }
