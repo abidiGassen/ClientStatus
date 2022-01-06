@@ -10,7 +10,14 @@ object ClientHistory {
     val clientsHistoryDropDup = clientsHistory.dropDuplicates()
     val updatedClientsInfoDropDup = updatedClientsInfo.dropDuplicates()
 
-    val updateEndDate = updatedClientsInfoDropDup
+    val existingInput = clientsHistory
+      .join(updatedClientsInfo, Seq("name","surname","address","startDate"),"inner")
+
+    val updatedClientsInfoClean = updatedClientsInfoDropDup
+      .join(existingInput, Seq("name","surname","address","startDate"), "left_anti")
+
+
+    val updateEndDate = updatedClientsInfoClean
       .select(
         col("name"),
         col("surname"),
@@ -27,7 +34,7 @@ object ClientHistory {
         col("surname")
       )
 
-    val newAddressClient = updatedClientsInfoDropDup
+    val newAddressClient = updatedClientsInfoClean
       .join(clientsHistoryList, Seq("name", "surname"), "left")
       .withColumn("endDate", lit(null))
       .withColumn("isEffective", lit(true).cast(BooleanType))
@@ -35,7 +42,7 @@ object ClientHistory {
     val clientAddressUpdate = closedOldClient
       .union(newAddressClient)
 
-    val clientsUpdateList = updatedClientsInfoDropDup
+    val clientsUpdateList = updatedClientsInfoClean
       .select(
         col("name"),
         col("surname")
@@ -47,7 +54,7 @@ object ClientHistory {
       .withColumn("isEffective", lit(true).cast(BooleanType))
 
     val alreadyExistingClient = clientsHistoryDropDup
-      .join(updatedClientsInfoDropDup, Seq("name","surname","address","startDate"),"inner")
+      .join(updatedClientsInfoClean, Seq("name","surname","address","startDate"),"inner")
       .withColumn("endDate", lit(null))
       .withColumn("isEffective", lit(true).cast(BooleanType))
 

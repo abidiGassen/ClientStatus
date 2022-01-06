@@ -105,4 +105,26 @@ class ClientHistorySpec extends AnyFlatSpec with GivenWhenThen {
     ).toDF()
     result.collect() should contain theSameElementsAs expectedResult.collect()
   }
+
+  "updateClientStatus" should "delete any already existing customer input" in {
+    Given("clientsInfo and updatedClientsInfo")
+    val clientsInfo = Seq(
+      UpdateClient("Ala", "Noumi", "LA", "12/07/2021")
+    )
+    val updatedClientsInfo = Seq(
+      UpdateClient("Ala", "Noumi", "LA", "12/07/2021")
+    )
+    import spark.implicits._
+    val clientsInfoDF: DataFrame = clientsInfo.toDF()
+    val updatedClientsInfoDF: DataFrame = updatedClientsInfo.toDF()
+
+    When("updateClientsStatus is invoked")
+    val result = updateClientsStatus(clientsInfoDF, updatedClientsInfoDF)
+
+    Then("The client Tarak Marzougui NY should be returned with a true effectiveness and a start date as the event time")
+    val expectedResult: DataFrame = Seq(
+      HistoryClient("Ala", "Noumi", "LA", "12/07/2021", null, true)
+    ).toDF()
+    result.collect() should contain theSameElementsAs expectedResult.collect()
+  }
 }
