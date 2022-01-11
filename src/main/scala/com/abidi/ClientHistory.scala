@@ -7,7 +7,6 @@ import org.apache.spark.sql.types.BooleanType
 object ClientHistory {
   def updateClientsStatus(clientsHistory: DataFrame, updatedClientsInfo: DataFrame): DataFrame = {
 
-    val clientsHistoryDropDup = clientsHistory.dropDuplicates()
     val updatedClientsInfoDropDup = updatedClientsInfo.dropDuplicates()
 
     val existingInput = clientsHistory
@@ -23,12 +22,13 @@ object ClientHistory {
         col("surname"),
         col("startDate").alias("endDate")
       )
+    val clientsHistoryWithoutEndDate = clientsHistory.drop("endDate","isEffective")
 
-    val closedOldClient = clientsHistoryDropDup
+    val closedOldClient = clientsHistoryWithoutEndDate
       .join(updateEndDate, Seq("name", "surname"), "inner")
       .withColumn("isEffective", lit(false).cast(BooleanType))
 
-    val clientsHistoryList = clientsHistoryDropDup
+    val clientsHistoryList = clientsHistory
       .select(
         col("name"),
         col("surname")
@@ -48,12 +48,12 @@ object ClientHistory {
         col("surname")
       )
 
-    val activeClients = clientsHistoryDropDup
+    val activeClients = clientsHistory
       .join(clientsUpdateList, Seq("name", "surname"), "left_anti")
       .withColumn("endDate", lit(null))
       .withColumn("isEffective", lit(true).cast(BooleanType))
 
-    val alreadyExistingClient = clientsHistoryDropDup
+    val alreadyExistingClient = clientsHistory
       .join(updatedClientsInfoClean, Seq("name","surname","address","startDate"),"inner")
       .withColumn("endDate", lit(null))
       .withColumn("isEffective", lit(true).cast(BooleanType))

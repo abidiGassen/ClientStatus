@@ -7,6 +7,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.GivenWhenThen
 import org.scalatest.matchers.should.Matchers._
 import com.abidi.ClientHistory.updateClientsStatus
+import org.apache.spark.sql.functions._
 
 class ClientHistorySpec extends AnyFlatSpec with GivenWhenThen {
 
@@ -15,14 +16,11 @@ class ClientHistorySpec extends AnyFlatSpec with GivenWhenThen {
     .master("local[*]")
     .getOrCreate()
 
-  val trueEffectiveness: Boolean = true
-  val falseEffectiveness: Boolean = false
-
   "updateClientsStatus" should "return client with the date of changing his address as an end date and a " +
     "false effectiveness, client with his new address and a true effectiveness  " in {
     Given("clientsInfo and updatedClientsInfo")
     val clientsInfo = Seq(
-      UpdateClient("Mohamed", "Sehli", "California", "25/08/2017")
+      HistoryClient("Mohamed", "Sehli", "California", "25/08/2017", null, true)
     )
     val updatedClientsInfo = Seq(
       UpdateClient("Mohamed", "Sehli", "Zurich", "25/06/2018")
@@ -46,7 +44,7 @@ class ClientHistorySpec extends AnyFlatSpec with GivenWhenThen {
   "updateClientsStatus" should "return clients existing only in the history table with a true effectiveness" in {
     Given("clientsInfo and updatedClientsInfo")
     val clientsInfo = Seq(
-      UpdateClient("Ala", "Noumi", "LA", "12/07/2021")
+      HistoryClient("Ala", "Noumi", "LA", "12/07/2021", null, true)
     )
     import spark.implicits._
     val clientsInfoDF: DataFrame = clientsInfo.toDF()
@@ -81,18 +79,14 @@ class ClientHistorySpec extends AnyFlatSpec with GivenWhenThen {
     result.collect() should contain theSameElementsAs expectedResult.collect()
   }
 
-  "updateClientStatus" should "delete duplicated data " in {
+  "updateClientStatus" should "deduplicate data in the update table" in {
     Given("clientsInfo and updatedClientsInfo")
-    val clientsInfo = Seq(
-      UpdateClient("Ala", "Noumi", "LA", "12/07/2021"),
-      UpdateClient("Ala", "Noumi", "LA", "12/07/2021")
-    )
     val updatedClientsInfo = Seq(
       UpdateClient("Tarak", "Marzougui", "NY", "25/12/2021"),
       UpdateClient("Tarak", "Marzougui", "NY", "25/12/2021")
     )
     import spark.implicits._
-    val clientsInfoDF: DataFrame = clientsInfo.toDF()
+    val clientsInfoDF: DataFrame = Seq.empty[UpdateClient].toDF()
     val updatedClientsInfoDF: DataFrame = updatedClientsInfo.toDF()
 
     When("updateClientsStatus is invoked")
@@ -100,16 +94,15 @@ class ClientHistorySpec extends AnyFlatSpec with GivenWhenThen {
 
     Then("clients Tarak Marzougui and Ala Noumi should be returned only once")
     val expectedResult: DataFrame = Seq(
-      HistoryClient("Tarak", "Marzougui", "NY", "25/12/2021", null, true),
-      HistoryClient("Ala", "Noumi", "LA", "12/07/2021", null, true)
+      HistoryClient("Tarak", "Marzougui", "NY", "25/12/2021", null, true)
     ).toDF()
     result.collect() should contain theSameElementsAs expectedResult.collect()
   }
 
-  "updateClientStatus" should "delete any already existing customer input" in {
+  "updateClientStatus" should "maintain the history table inchanged by duplicated data from the update" in {
     Given("clientsInfo and updatedClientsInfo")
     val clientsInfo = Seq(
-      UpdateClient("Ala", "Noumi", "LA", "12/07/2021")
+      HistoryClient("Ala", "Noumi", "LA", "12/07/2021", null, true)
     )
     val updatedClientsInfo = Seq(
       UpdateClient("Ala", "Noumi", "LA", "12/07/2021")
