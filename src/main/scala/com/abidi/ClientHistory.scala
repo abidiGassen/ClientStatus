@@ -2,61 +2,30 @@ package com.abidi
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types.BooleanType
+import org.apache.spark.sql.expressions.Window
 
 object ClientHistory {
   def updateClientsStatus(clientsHistory: DataFrame, updatedClientsInfo: DataFrame): DataFrame = {
 
-    val clientsHistoryDropDup = clientsHistory.dropDuplicates()
-    val updatedClientsInfoDropDup = updatedClientsInfo.dropDuplicates()
+    val updatedClientsInfoDeduplicate = updatedClientsInfo.dropDuplicates()
 
-    val updateEndDate = updatedClientsInfoDropDup
-      .select(
-        col("name"),
-        col("surname"),
-        col("startDate").alias("endDate")
-      )
+    val existingInput = clientsHistory
+      .join(updatedClientsInfo, Seq("name","surname","address","startDate"),"inner")
 
-    val closedOldClient = clientsHistoryDropDup
-      .join(updateEndDate, Seq("name", "surname"), "inner")
-      .withColumn("isEffective", lit(false).cast(BooleanType))
+    val updatedClientsInfoDeduplicated = updatedClientsInfoDeduplicate
+      .join(existingInput, Seq("name","surname","address","startDate"), "left_anti")
 
-    val clientsHistoryList = clientsHistoryDropDup
-      .select(
-        col("name"),
-        col("surname")
-      )
+    val clientsHistoryWithUpdateClientSchema = clientsHistory.drop("endDate","isEffective")
 
-    val newAddressClient = updatedClientsInfoDropDup
-      .join(clientsHistoryList, Seq("name", "surname"), "left")
-      .withColumn("endDate", lit(null))
-      .withColumn("isEffective", lit(true).cast(BooleanType))
+    val closedOldClient = clientsHistoryWithUpdateClientSchema
+      .union(updatedClientsInfoDeduplicated)
 
-    val clientAddressUpdate = closedOldClient
-      .union(newAddressClient)
+    val windowSpec = Window.partitionBy("name","surname").orderBy("startDate")
 
-    val clientsUpdateList = updatedClientsInfoDropDup
-      .select(
-        col("name"),
-        col("surname")
-      )
+    val clientsUpdatedHistory = closedOldClient
+      .withColumn("endDate", lead("startDate",1).over(windowSpec))
+      .withColumn("isEffective", when(col("endDate") =!= "null", false).otherwise(true))
 
-    val activeClients = clientsHistoryDropDup
-      .join(clientsUpdateList, Seq("name", "surname"), "left_anti")
-      .withColumn("endDate", lit(null))
-      .withColumn("isEffective", lit(true).cast(BooleanType))
-
-    val alreadyExistingClient = clientsHistoryDropDup
-      .join(updatedClientsInfoDropDup, Seq("name","surname","address","startDate"),"inner")
-      .withColumn("endDate", lit(null))
-      .withColumn("isEffective", lit(true).cast(BooleanType))
-
-    val firstVersion = clientAddressUpdate
-      .union(activeClients)
-
-    val updatedClientsStatus = firstVersion
-      .union(alreadyExistingClient)
-
-    updatedClientsStatus
+    clientsUpdatedHistory
   }
 }
