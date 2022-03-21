@@ -13,3 +13,6 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.10" % "test"
 
 // https://mvnrepository.com/artifact/org.scalatest/scalatest
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.3.0-SNAP2" % Test
+
+// https://mvnrepository.com/artifact/io.delta/delta-core
+libraryDependencies += "io.delta" %% "delta-core" % "1.0.0"
