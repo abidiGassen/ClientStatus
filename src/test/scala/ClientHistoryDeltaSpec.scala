@@ -7,6 +7,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.GivenWhenThen
 import org.scalatest.matchers.should.Matchers._
 import com.abidi.ClientHistoryDelta.updateClientsStatus
+import java.nio.file.Paths
 
 class ClientHistoryDeltaSpec extends AnyFlatSpec with GivenWhenThen {
 
@@ -15,8 +16,11 @@ class ClientHistoryDeltaSpec extends AnyFlatSpec with GivenWhenThen {
     .appName("client status")
     .getOrCreate()
 
+  val Path = Paths.get("target\\History")
+
   "updateClientsStatus" should "return client with the date of changing his address as an end date and a " +
     "false effectiveness, client with his new address and a true effectiveness  " in {
+
     Given("clientsInfo and updatedClientsInfo")
     val clientsInfo = Seq(
       HistoryClient("Mohamed", "Sehli", "California", "2017/08/25", null, true)
@@ -32,14 +36,14 @@ class ClientHistoryDeltaSpec extends AnyFlatSpec with GivenWhenThen {
       .write
       .format("delta")
       .mode("overwrite")
-      .save("C:\\Users\\abidi\\IdeaProjects\\ClientStatus\\target\\History")
+      .save("Path")
 
     When("updateClientsStatus is invoked")
-    val result = updateClientsStatus(clientsInfoDF, updatedClientsInfoDF)
+    val result = updateClientsStatus(clientsInfoDF, updatedClientsInfoDF, Path)
 
     Then("The client Mohamed Sehli should be returned two times: one with his old address, " +
       "an end date(start date of new address) and false effectiveness ,the other row with his new address ,its start date(effectiveness true)")
-    val expectedResult  = Seq(
+    val expectedResult = Seq(
       HistoryClient("Mohamed", "Sehli", "California", "2017/08/25", "2018/06/25", false),
       HistoryClient("Mohamed", "Sehli", "Zurich", "2018/06/25", null, true)
     ).toDF()
@@ -59,10 +63,10 @@ class ClientHistoryDeltaSpec extends AnyFlatSpec with GivenWhenThen {
       .write
       .format("delta")
       .mode("overwrite")
-      .save("C:\\Users\\abidi\\IdeaProjects\\ClientStatus\\target\\History")
+      .save("Path")
 
     When("updateClientsStatus is invoked")
-    val result = updateClientsStatus(clientsInfoDF, updatedClientsInfoDF)
+    val result = updateClientsStatus(clientsInfoDF, updatedClientsInfoDF, Path)
 
     Then("the client Ala Noumi LA should be returned with true effectiveness and his already existing start date")
     val expectedResult: DataFrame = Seq(
@@ -84,10 +88,10 @@ class ClientHistoryDeltaSpec extends AnyFlatSpec with GivenWhenThen {
       .write
       .format("delta")
       .mode("overwrite")
-      .save("C:\\Users\\abidi\\IdeaProjects\\ClientStatus\\target\\History")
+      .save("Path")
 
     When("updateClientsStatus is invoked")
-    val result = updateClientsStatus(clientsInfoDF, updatedClientsInfoDF)
+    val result = updateClientsStatus(clientsInfoDF, updatedClientsInfoDF, Path)
 
     Then("The client Tarak Marzougui NY should be returned with a true effectiveness and a start date as the event time")
     val expectedResult: DataFrame = Seq(
@@ -110,10 +114,10 @@ class ClientHistoryDeltaSpec extends AnyFlatSpec with GivenWhenThen {
       .write
       .format("delta")
       .mode("overwrite")
-      .save("C:\\Users\\abidi\\IdeaProjects\\ClientStatus\\target\\History")
+      .save("Path")
 
     When("updateClientsStatus is invoked")
-    val result = updateClientsStatus(clientsInfoDF, updatedClientsInfoDF)
+    val result = updateClientsStatus(clientsInfoDF, updatedClientsInfoDF, Path)
 
     Then("clients Tarak Marzougui and Ala Noumi should be returned only once")
     val expectedResult: DataFrame = Seq(
