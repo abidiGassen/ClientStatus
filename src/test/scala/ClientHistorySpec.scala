@@ -1,7 +1,3 @@
-case class HistoryClient(name: String, surname: String, address: String, startDate: String, endDate: String, isEffective: Boolean)
-
-case class UpdateClient(name: String, surname: String, address: String, startDate: String)
-
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.GivenWhenThen
