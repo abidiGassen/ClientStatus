@@ -1,13 +1,12 @@
-//case class HistoryClient(name: String, surname: String, address: String, startDate: String, endDate: String, isEffective: Boolean)
+case class HistoryClient(name: String, surname: String, address: String, startDate: String, endDate: String, isEffective: Boolean)
 
-//case class UpdateClient(name: String, surname: String, address: String, startDate: String)
+case class UpdateClient(name: String, surname: String, address: String, startDate: String)
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.GivenWhenThen
 import org.scalatest.matchers.should.Matchers._
 import com.abidi.ClientHistory.updateClientsStatus
-import org.apache.spark.sql.functions._
 
 class ClientHistorySpec extends AnyFlatSpec with GivenWhenThen {
 
@@ -147,26 +146,4 @@ class ClientHistorySpec extends AnyFlatSpec with GivenWhenThen {
     expectedResult.show()
      result.collect() should contain theSameElementsAs expectedResult.collect()
   }
-  "" should "" in {
-    Given("clientsInfo and updatedClientsInfo")
-    val clientsInfo = Seq(
-      HistoryClient("Ala", "Noumi", "LA", "2016/07/01", null, true),
-      HistoryClient("Dhia", "Mansouri", "CAL", "2015/05/01", null, true),
-      HistoryClient("Anwer", "Hichri", "Aus", "2021/06/01", null, true)
-    )
-    val updatedClientsInfo = Seq(
-      UpdateClient("Ala", "Noumi", "CH", "2017/05/01"),
-      UpdateClient("Ala", "Noumi", "NY", "2021/06/01"),
-      UpdateClient("Dhia", "Mansouri", "NY", "2018/07/01"),
-      UpdateClient("Tayeb", "Ouni", "SPA", "2021/07/01")
-    )
-    import spark.implicits._
-    val clientsInfoDF: DataFrame = clientsInfo.toDF()
-    val updatedClientsInfoDF: DataFrame = updatedClientsInfo.toDF()
-    When("")
-    val result = updateClientsStatus(clientsInfoDF, updatedClientsInfoDF)
-
-    result.show()
-  }
-
 }
