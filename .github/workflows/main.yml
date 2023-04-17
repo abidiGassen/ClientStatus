@@ -18,7 +18,6 @@ jobs:
       with:
         java-version: '8'
         distribution: 'temurin'
-        cache: 'sbt'
     - name: Run tests
       run: sbt test
         
