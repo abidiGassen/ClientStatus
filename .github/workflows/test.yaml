@@ -29,5 +29,5 @@ jobs:
 
       # print an error message and fail the workflow when merging directly to master
       - name: Prevent direct merges to master
-            if: github.ref == 'refs/heads/master'
+            if: ${{ github.ref == 'refs/heads/master' }}
             run: echo "Direct merges to master are not allowed. Please create a pull request instead."
