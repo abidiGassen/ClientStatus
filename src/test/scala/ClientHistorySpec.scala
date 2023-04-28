@@ -168,5 +168,4 @@ class ClientHistorySpec extends AnyFlatSpec with GivenWhenThen {
 
     result.show()
   }
-
 }
