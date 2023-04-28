@@ -26,8 +26,3 @@ jobs:
       # run the project's tests
       - name: Run tests
         run: sbt test
-
-      # print an error message and fail the workflow when merging directly to master
-      - name: Prevent direct merges to master
-            run: echo "Direct merges to master are not allowed. Please create a pull request instead."
-            if: ${{ github.ref == 'refs/heads/master' }}
